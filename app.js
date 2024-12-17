@@ -21,7 +21,7 @@ app.get('/room/:id', (req, res) => {
 
 const rooms = {};
 const players = {};
-const gameTime = 2;
+const gameTime = 60;
 
 const votingRound = (roomID) => {
     const votingIndex = rooms[roomID].votingIndex;
