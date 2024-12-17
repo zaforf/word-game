@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>game</title>
+    </head>
+    <body>
+        <h1>congrats! you are in room:</h1>
+
+        <div id="lobby">
+            <p id="status">connecting...</p>
+            <button id="start" disabled>start</button>
+            <ul id="players"></ul>
+        </div>
+
+        <div id="game" style="display: none;">
+            <h2 id="timer">00:00</h2>
+        </div>
+
+        <div id="voting" style="display: none;">
+            <button id="next round" disabled>next round</button>
+            <p id="word"></p>
+            <ul id="submissions"></ul>
+            <p>definitions:</p>
+            <ul id="definitions"></ul>
+        </div>
+
+        <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+        <script src="/js/room.js"></script>
+    </body>
+</html>
