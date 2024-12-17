@@ -48,7 +48,14 @@ const votingRound = (roomID) => {
             io.to(roomID).emit('voting round', rooms[roomID].voting);
             rooms[roomID].state = 'voting';
         });
-}
+};
+
+const restart = (roomID) => {
+    rooms[roomID].state = 'lobby';
+    rooms[roomID].words = [];
+    rooms[roomID].votingIndex = 0;
+    io.to(roomID).emit('game ended');
+};
 
 io.on('connection', (socket) => {
     console.log('a user connected');
@@ -138,8 +145,7 @@ io.on('connection', (socket) => {
             if (!isHost || rooms[roomID].state !== 'voting') return;
             rooms[roomID].votingIndex++;
             if (rooms[roomID].votingIndex === rooms[roomID].words.length) {
-                rooms[roomID].state = 'lobby';
-                io.to(roomID).emit('game ended');
+                restart(roomID);
             } else votingRound(roomID);
         });
     });
@@ -149,7 +155,7 @@ io.on('connection', (socket) => {
         if (!players[socket.id]) return;
         const roomID = players[socket.id].room;
         rooms[roomID].players = rooms[roomID].players.filter(id => id !== socket.id);
-        delete votingMatrix[socket.id];
+        delete rooms[roomID].votingMatrix[socket.id];
 
         if (rooms[roomID].players.length > 0)
             io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => players[id].name) });

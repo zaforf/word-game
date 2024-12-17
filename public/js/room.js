@@ -57,6 +57,7 @@ socket.on('game started', ({ words, time }) => {
         }
     }, 1000);
 
+    document.getElementById('inputs').innerHTML = '';
     words.forEach(([word, pos]) => {
         const div = document.createElement('div');
         div.innerText = word + ' (' + pos + ')';
@@ -67,7 +68,7 @@ socket.on('game started', ({ words, time }) => {
         input.style.marginLeft = '10px';
         input.style.fontSize = '20px';
         div.appendChild(input);
-        document.getElementById('game').appendChild(div);
+        document.getElementById('inputs').appendChild(div);
     });
 });
 
