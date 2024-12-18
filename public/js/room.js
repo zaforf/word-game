@@ -13,7 +13,11 @@ let isHost = false;
 
 document.getElementById('change name').addEventListener('click', () => {
     do playerName = prompt('Enter your name:');
-    while (!playerName || !/^[a-zA-Z0-9]+$/.test(playerName));
+    while (!/^[a-zA-Z0-9]*$/.test(playerName));
+    if (!playerName) {
+        playerName = localStorage.getItem('playerName');
+        return;
+    }
     localStorage.setItem('playerName', playerName);
     socket.emit('join room', { roomID, playerName });
 });
@@ -146,7 +150,7 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
     defList.innerHTML = '';
     definitions.forEach(definition => {
         const li = document.createElement('li');
-        li.innerText = definition.definition;
+        li.innerText = definition;
         li.style.fontSize = '20px';
         defList.appendChild(li);
     });

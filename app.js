@@ -21,33 +21,26 @@ app.get('/room/:id', (req, res) => {
 
 const rooms = {};
 const players = {};
-const gameTime = 2;
+const posMap = {
+    'n': 'noun',
+    'v': 'verb',
+    'adj': 'adjective',
+    'adv': 'adverb'
+};
+
+let gameTime = 20;
+let numWords = 6;
+let frequencyCutOff = 0.1;
 
 const votingRound = (roomID) => {
     const votingIndex = rooms[roomID].votingIndex;
     const submissions = rooms[roomID].players.map(id => [id, players[id].submission[votingIndex]]).filter(([_, submission]) => submission).sort(() => Math.random() - 0.5);
+    const [word, pos, definitions] = rooms[roomID].words[votingIndex];
 
-    // get defintion from https://api.dictionaryapi.dev/api/v2/entries/en/<word>
-    let [word, pos] = rooms[roomID].words[votingIndex];
-    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`)
-        .then(res => res.json())
-        .then(data => {
-            let definitions = [];
-            try {
-                data.forEach(entry => {
-                    const meaning = entry.meanings.find(group => group.partOfSpeech === pos);
-                    if (meaning) definitions.push(...meaning.definitions);
-                });
-            } catch (e) {
-                definitions = [{ definition: 'No definition found' }];
-            }
-            if (definitions.length === 0) definitions = [{ definition: 'No definition found' }];
-
-            rooms[roomID].voting = { submissions, definitions, word, pos, results: Array(submissions.length).fill([0, 0]) };
-            rooms[roomID].players.forEach(id => rooms[roomID].votingMatrix[id] = Array(submissions.length).fill(0));
-            io.to(roomID).emit('voting round', rooms[roomID].voting);
-            rooms[roomID].state = 'voting';
-        });
+    rooms[roomID].voting = { submissions, definitions, word, pos, results: Array(submissions.length).fill([0, 0]) };
+    rooms[roomID].players.forEach(id => rooms[roomID].votingMatrix[id] = Array(submissions.length).fill(0));
+    io.to(roomID).emit('voting round', rooms[roomID].voting);
+    rooms[roomID].state = 'voting';
 };
 
 const restart = (roomID) => {
@@ -75,8 +68,6 @@ io.on('connection', (socket) => {
     console.log('a user connected');
 
     socket.on('join room', ({ roomID, playerName }) => {
-        console.log(`user ${socket.id} joined room ${roomID}`);
-        console.log(playerName);
         if (!rooms[roomID]) rooms[roomID] = {
             players: [],
             words: [],
@@ -111,29 +102,46 @@ io.on('connection', (socket) => {
             rooms[roomID].state = 'game';
             rooms[roomID].lastStart = Date.now();
 
-            // get 3 nouns and 3 adjectives, add the word, pos pair to the words array in the room
-            const apiURL = 'https://random-word-form.herokuapp.com/random';
-            fetch(`${apiURL}/noun?count=3`)
-                .then(res => res.json())
-                .then(data => {
-                    rooms[roomID].words.push(...data.map(word => [word, 'noun']));
-                    return fetch(`${apiURL}/adjective?count=3`);
-                })
-                .then(res => res.json())
-                .then(data => {
-                    rooms[roomID].words.push(...data.map(word => [word, 'adjective']));
-                    rooms[roomID].words = rooms[roomID].words.sort(() => Math.random() - 0.5); // shuffle the words
-                    io.to(roomID).emit('game started', { words: rooms[roomID].words, time: gameTime });
-                });
+            // get numWords random words from the API
+            const randomWordsAPI = 'https://random-word-api.herokuapp.com/word?number=10';
+            const dictionaryAPI = (word) => `https://api.datamuse.com/words?sp=${word}&md=pdf&max=1`;
+
+            const processWord = (word) => {
+                return fetch(dictionaryAPI(word))
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.length === 0) return;
+                        data = data[0];
+                        if (data.word !== word) return; // word not found
+                        const freq = data.tags.find(tag => tag.startsWith('f:')).split(':')[1];
+                        if (freq < frequencyCutOff) return; // word is too rare
+                        if (data.defs === undefined) return; // no definitions found
+                        const definitions = data.defs.map(def => def.split('\t')).filter(def => def[0] !== 'u');
+                        if (definitions.length === 0) return; // no definitions found
+                        const pos = definitions[Math.floor(Math.random() * definitions.length)][0];
+                        rooms[roomID].words.push([word, posMap[pos], definitions.filter(def => def[0] === pos).map(def => def[1])]);
+                    });
+            };
+
+            const getFilteredWords = async () => {
+                while (rooms[roomID].words.length < numWords) {
+                    const data = await (await fetch(randomWordsAPI)).json();
+                    for (const word of data) {
+                        if (rooms[roomID].words.length >= numWords) break;
+                        await processWord(word);
+                    }
+                };
+            };
             
-            setTimeout(() => {
-                votingRound(roomID);
-            }, gameTime * 1000 + 1000);
+            getFilteredWords().then(() => {
+                io.to(roomID).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), time: gameTime });
+                setTimeout(() => votingRound(roomID), gameTime * 1000 + 1000);
+            });
         });
 
         if (rooms[roomID].state === 'game') {
             const timeLeft = gameTime - Math.ceil((Date.now() - rooms[roomID].lastStart) / 1000);
-            io.to(socket.id).emit('game started', { words: rooms[roomID].words, time: timeLeft });
+            io.to(socket.id).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), time: timeLeft });
         }
 
         socket.on('submit words', ({ input }) => {
