@@ -6,10 +6,17 @@ while (!playerName || !/^[a-zA-Z0-9]+$/.test(playerName)) {
     localStorage.setItem('playerName', playerName);
 }
 
-const room = window.location.pathname.split('/')[2];
-document.querySelector('h1').innerText = 'congrats! you are in room: ' + room;
-socket.emit('join room', { room, playerName });
+const roomID = window.location.pathname.split('/')[2];
+document.querySelector('h1').innerText = 'congrats! you are in room: ' + roomID;
+socket.emit('join room', { roomID, playerName });
 let isHost = false;
+
+document.getElementById('change name').addEventListener('click', () => {
+    do playerName = prompt('Enter your name:');
+    while (!playerName || !/^[a-zA-Z0-9]+$/.test(playerName));
+    localStorage.setItem('playerName', playerName);
+    socket.emit('join room', { roomID, playerName });
+});
 
 socket.on('update lobby', ({ hostID, players }) => {
     isHost = socket.id === hostID;
@@ -23,9 +30,12 @@ socket.on('update lobby', ({ hostID, players }) => {
     const playerList = document.getElementById('players');
     playerList.innerHTML = '';
     // first person should have (host) next to their name
-    players.forEach((player, i) => {
+    players[0][0] += ' (host)';
+    // display the list of players sorted by score
+    players.sort((a, b) => b[1] - a[1]).forEach(([name, score]) => {
         const li = document.createElement('li');
-        li.innerText = player + (i === 0 ? ' (host)' : '');
+        li.innerText = name + ': ' + score;
+        li.style.fontSize = '20px';
         playerList.appendChild(li);
     });
 });
@@ -95,6 +105,7 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
         if (total !== 0 && plus >= total / 2) li.style.backgroundColor = 'lightgreen';
 
         const up = document.createElement('button');
+        if (player === socket.id) up.disabled = true;
         up.innerText = '🔼';
         up.style.marginRight = '10px';
         up.addEventListener('click', () => {
@@ -110,6 +121,7 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
             socket.emit('vote', { index, vote });
         });
         const down = document.createElement('button');
+        if (player === socket.id) down.disabled = true;
         down.innerText = '🔽';
         down.style.marginRight = '10px';
         down.addEventListener('click', () => {

@@ -21,7 +21,7 @@ app.get('/room/:id', (req, res) => {
 
 const rooms = {};
 const players = {};
-const gameTime = 60;
+const gameTime = 2;
 
 const votingRound = (roomID) => {
     const votingIndex = rooms[roomID].votingIndex;
@@ -55,12 +55,28 @@ const restart = (roomID) => {
     rooms[roomID].words = [];
     rooms[roomID].votingIndex = 0;
     io.to(roomID).emit('game ended');
+    io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
+};
+
+const calculateVotingResults = (roomID) => {
+    const numSubmissions = rooms[roomID].voting.submissions.length;
+    // array of 2-tuples, [plus votes, total votes]
+    const results = Array(numSubmissions).fill().map(() => [0, 0]);
+    rooms[roomID].players.forEach(id => {
+        rooms[roomID].votingMatrix[id].forEach((vote, i) => {
+            results[i][0] += Math.max(0, vote);
+            results[i][1] += Math.abs(vote);
+        });
+    });
+    rooms[roomID].voting.results = results;
 };
 
 io.on('connection', (socket) => {
     console.log('a user connected');
 
     socket.on('join room', ({ roomID, playerName }) => {
+        console.log(`user ${socket.id} joined room ${roomID}`);
+        console.log(playerName);
         if (!rooms[roomID]) rooms[roomID] = {
             players: [],
             words: [],
@@ -70,16 +86,24 @@ io.on('connection', (socket) => {
             votingIndex: 0,
             votingMatrix: {}
         };
-        players[socket.id] = { 
-            room: roomID,
-            name: playerName,
-            submission: []
-        };
+        if (!players[socket.id]) {
+            players[socket.id] = { 
+                room: roomID,
+                name: playerName,
+                submission: [],
+                score: 0
+            };
+        } else { // update player name
+            players[socket.id].name = playerName;
+            io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
+            return;
+        }
 
         socket.join(roomID);
+
         rooms[roomID].players.push(socket.id);
         
-        io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => players[id].name) });
+        io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
 
         socket.on('start game', () => {
             const isHost = rooms[roomID].players[0] === socket.id;
@@ -124,25 +148,23 @@ io.on('connection', (socket) => {
 
         socket.on('vote', ({ index, vote }) => {
             if (rooms[roomID].state !== 'voting') return;
+            if (rooms[roomID].voting.submissions[index][0] === socket.id) return; // cannot vote for yourself
+
             rooms[roomID].votingMatrix[socket.id][index] = Math.sign(vote);
-            const numSubmissions = rooms[roomID].voting.submissions.length;
-            // array of 2-tuples, [plus votes, total votes]
-            const results = Array(numSubmissions).fill().map(() => [0, 0]);
-            rooms[roomID].players.forEach(id => {
-                rooms[roomID].votingMatrix[id].forEach((vote, i) => {
-                    results[i][0] += Math.max(0, vote);
-                    results[i][1] += Math.abs(vote);
-                });
-            });
-            console.log(rooms[roomID].votingMatrix);
-            console.log(results);
-            rooms[roomID].voting.results = results;
-            io.to(roomID).emit('update votes', results);
+            calculateVotingResults(roomID);
+
+            io.to(roomID).emit('update votes', rooms[roomID].voting.results);
         });
 
         socket.on('next round', () => {
             const isHost = rooms[roomID].players[0] === socket.id;
             if (!isHost || rooms[roomID].state !== 'voting') return;
+
+            rooms[roomID].voting.results.forEach(([plus, total], i) => {
+                if (total !== 0 && plus >= total / 2)
+                    players[rooms[roomID].voting.submissions[i][0]].score++;
+            });
+
             rooms[roomID].votingIndex++;
             if (rooms[roomID].votingIndex === rooms[roomID].words.length) {
                 restart(roomID);
@@ -154,15 +176,16 @@ io.on('connection', (socket) => {
         console.log('user disconnected');
         if (!players[socket.id]) return;
         const roomID = players[socket.id].room;
+        delete players[socket.id];
         rooms[roomID].players = rooms[roomID].players.filter(id => id !== socket.id);
         delete rooms[roomID].votingMatrix[socket.id];
 
         if (rooms[roomID].players.length > 0)
-            io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => players[id].name) });
+            io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
         else delete rooms[roomID];
     });
 });
 
 server.listen(port, () => {
-    console.log(`Example app listening at http://localhost:${port}`);
+    console.log(`listening on *:${port}`);
 });
