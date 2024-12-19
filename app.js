@@ -169,6 +169,8 @@ io.on('connection', (socket) => {
             if (!isHost || rooms[roomID].state !== 'voting') return;
 
             rooms[roomID].voting.results.forEach(([plus, total], i) => {
+                if (!players[rooms[roomID].voting.submissions[i][0]])
+                    return; // player left
                 if (total !== 0 && plus >= total / 2)
                     players[rooms[roomID].voting.submissions[i][0]].score++;
             });

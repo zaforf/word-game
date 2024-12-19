@@ -1,0 +1,357 @@
+:root {
+    --primary-color: #333333;
+    /* light gray background color */
+    --background-color: #F8F8F8;
+    --white: #FFFFFF;
+    --accent-color: #E0E0E0;
+    /* Light gray for borders and highlights */
+}
+
+body {
+    font-family: 'Georgia', serif;
+    background-color: var(--background-color);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background-color: var(--white);
+    padding: 0.5rem 1rem;
+    /* Reduce vertical padding for a thinner header */
+    display: flex;
+    /* Use flexbox for layout */
+    align-items: center;
+    /* Align items vertically in the center */
+    justify-content: space-between;
+    /* Space out the title and button */
+    border-bottom: 1px solid var(--accent-color);
+}
+
+header h1 {
+    font-size: 1.2rem;
+    /* Adjust font size to fit within the thinner header */
+    margin: 0;
+    /* Remove default margin */
+    color: var(--primary-color);
+}
+
+header .btn-primary {
+    font-size: 0.rem;
+    /* Adjust font size for the button */
+}
+
+
+h1,
+h2,
+h3 {
+    color: var(--primary-color);
+}
+
+h2 {
+    /* reduce margin-top for a tighter layout */
+    margin: 0 0 1rem 0
+}
+
+main {
+    flex-grow: 1;
+    padding: 2rem;
+}
+
+.game-container {
+    display: flex;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.left-panel {
+    flex: 2;
+}
+
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-section,
+.player-section,
+.chat-section {
+    background-color: var(--white);
+    border: 1px solid var(--accent-color);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    /* Rounded edges */
+}
+
+/* style it similar to border of a card */
+hr {
+    border: none;
+    border-top: 1px solid var(--accent-color);
+    margin: 2rem 0;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+    border-radius: 4px;
+    /* Slightly rounded buttons */
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #555555;
+    /* Darken on hover */
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.player-list {
+    list-style-type: none;
+    padding: 0;
+    max-height: 200px;
+    /* Scrollable player list */
+    overflow-y: auto;
+    /* Adds scrolling if too many players */
+}
+
+.player-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--accent-color);
+}
+
+.chat-messages {
+    height: 300px;
+    /* Fixed height for chat messages */
+    overflow-y: auto;
+    /* Adds scrolling for long chat history */
+    border-radius: 8px;
+    /* Rounded edges */
+}
+
+.chat-input {
+    display: flex;
+}
+
+.chat-input input {
+    flex-grow: 1;
+    padding: 0.5rem;
+    border-radius: 4px;
+    /* Rounded input field */
+    border: 1px solid var(--accent-color);
+}
+
+.chat-input button {
+    margin-left: 0.5rem;
+}
+
+.highlight-word {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+ul.definition-list {
+    list-style: none;
+    /* Remove default bullets */
+    padding: 0;
+    margin: 0;
+}
+
+ul.definition-list li {
+    padding: 0.5rem 1rem;
+    /* Add spacing around items */
+    margin-bottom: 0.5rem;
+    /* Space between items */
+    background-color: #F8F8F8;
+    /* Light gray background for contrast */
+    border-radius: 8px;
+    /* Rounded edges for a modern look */
+    font-family: 'Georgia', serif;
+    /* Elegant, dictionary-like font */
+    font-size: 1rem;
+    border-left: 4px solid var(--primary-color);
+
+}
+
+.word-input-container {
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.word-input {
+    width: calc(100% - 20px);
+    /* Fit within parent container */
+    padding: 5px;
+    font-size: 16px;
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    overflow-x: auto;
+    /* Scroll horizontally when text exceeds size */
+    /* increase spacing above */
+    margin-top: 15px;
+}
+
+.highlight-success {
+    background-color: lightgreen;
+    /* Highlight successful items */
+}
+
+.highlight-self {
+    background-color: #F0F0F0;
+}
+
+.submission-list {
+    list-style: none;
+    /* Remove default bullets */
+    padding: 0;
+    margin: 0 0 2rem;
+}
+
+.submission-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #D3D3D3;
+    /* Subtle divider between items */
+    font-size: 16px;
+    /* Consistent font size */
+}
+
+.submission-item span {
+    flex: 0 0 60px;
+    /* Fixed width for results (e.g., "3 / 5") */
+    text-align: left;
+    /* Align results to the left */
+}
+
+.submission-item div {
+    flex: 1;
+    /* Flexible space for submission text */
+    text-align: left;
+    /* Align text to the left */
+    padding-left: 10px;
+    /* Add spacing between results and text */
+}
+
+.submission-item button {
+    flex: 0 0 40px;
+    /* Fixed width for buttons */
+    margin-left: 5px;
+    /* Add space between buttons */
+    padding: 5px;
+    font-size: 14px;
+    color: #fff;
+    /* White text for buttons */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.upvote-button {
+    background-color: #18BC9C;
+    /* Green for upvote */
+}
+
+.upvote-button:hover {
+    background-color: #16A085;
+    /* Darker green on hover */
+}
+
+.downvote-button {
+    background-color: #E74C3C;
+    /* Red for downvote */
+}
+
+.downvote-button:hover {
+    background-color: #C0392B;
+    /* Darker red on hover */
+}
+
+.active {
+    outline: 2px solid #34495E;
+    /* Highlight active button with a dark border */
+}
+
+.timer {
+    /* bold font for emphasis */
+    font-weight: bold;
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    animation: pulse 1s infinite;
+    /* Add pulse animation */
+}
+
+.game-section,
+.player-section,
+.chat-section {
+    animation: panelFade 0.4s ease-in-out;
+}
+
+@keyframes panelFade {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+        /* Slight zoom-in effect */
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.submission-item,
+.definition-list li {
+    animation: fadeIn 0.5s ease-in-out;
+    /* Fade-in effect */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+        /* Slight upward motion */
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.btn-primary,
+.upvote-button,
+.downvote-button {
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    /* Smooth hover and click effects */
+}
+
+.btn-primary:active,
+.upvote-button:active,
+.downvote-button:active {
+    transform: scale(0.95);
+    /* Slightly shrink on click */
+}
+
+.definition-list li {
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    /* Smooth transition for hover effects */
+}
+
+.definition-list li:hover {
+    background-color: #E8E8E8;
+    /* Slightly darker background on hover */
+}
