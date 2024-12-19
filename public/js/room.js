@@ -198,3 +198,27 @@ socket.on('game ended', () => {
     document.getElementById('lobby').style.display = 'block';
     document.getElementById('voting').style.display = 'none';
 });
+
+const input = document.getElementById('chat-input');
+const sendButton = document.getElementById('send-message');
+
+const sendMessage = () => {
+    if (!input.value) return;
+    socket.emit('chat message', input.value);
+    input.value = '';
+};
+input.addEventListener('keypress', (e) => e.key === 'Enter' && sendMessage());
+sendButton.addEventListener('click', sendMessage);
+
+const chatMessages = document.getElementById('chat-messages');
+
+socket.on('chat message', ({ name, msg, special }) => {
+    const li = document.createElement('li');
+    if (special) {
+        li.classList.add('special');
+        li.innerText = msg;
+    } else li.innerText = `${name}: ${msg}`;
+    li.classList.add('chat-message');
+    document.getElementById('chat-messages').appendChild(li);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+});

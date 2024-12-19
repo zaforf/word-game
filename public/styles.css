@@ -5,10 +5,23 @@
     --white: #FFFFFF;
     --accent-color: #E0E0E0;
     /* Light gray for borders and highlights */
+    font-family: "Open Sans", serif; 
+    font-weight: 400;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+button {
+    font-family: "Open Sans", serif;
+    font-weight: 300;
 }
 
 body {
-    font-family: 'Georgia', serif;
+    font-family: "Open Sans", serif;
     background-color: var(--background-color);
     margin: 0;
     padding: 0;
@@ -137,6 +150,21 @@ hr {
     /* Adds scrolling for long chat history */
     border-radius: 8px;
     /* Rounded edges */
+    margin-bottom: 1rem;
+    /* better scroll bar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) var(--background-color);
+}
+
+.chat-messages li {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--accent-color);
+    /* remove default bullets */
+    list-style-type: none;
+}
+
+.special {
+    color: #1E90FF;
 }
 
 .chat-input {
@@ -176,8 +204,7 @@ ul.definition-list li {
     /* Light gray background for contrast */
     border-radius: 8px;
     /* Rounded edges for a modern look */
-    font-family: 'Georgia', serif;
-    /* Elegant, dictionary-like font */
+    font-family: "Open Sans", serif;    /* Elegant, dictionary-like font */
     font-size: 1rem;
     border-left: 4px solid var(--primary-color);
 

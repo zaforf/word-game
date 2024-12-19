@@ -85,6 +85,7 @@ io.on('connection', (socket) => {
                 score: 0
             };
         } else { // update player name
+            io.to(roomID).emit('chat message', { name: 'Server', msg: `${players[socket.id].name} changed their name to ${playerName}`, special: true });
             players[socket.id].name = playerName;
             io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
             return;
@@ -179,6 +180,10 @@ io.on('connection', (socket) => {
             if (rooms[roomID].votingIndex === rooms[roomID].words.length) {
                 restart(roomID);
             } else votingRound(roomID);
+        });
+
+        socket.on('chat message', (msg) => {
+            io.to(roomID).emit('chat message', { name: players[socket.id].name, msg, special: false });
         });
     });
 
