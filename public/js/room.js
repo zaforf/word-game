@@ -7,10 +7,10 @@ while (!playerName || !/^[a-zA-Z0-9]+$/.test(playerName)) {
     localStorage.setItem('playerName', playerName);
 }
 
+const roomID = window.location.pathname.split('/')[2];
 // wait for the server to send the userID before joining the room
 socket.on('session', (userID) => {
     socket.userID = userID;
-    const roomID = window.location.pathname.split('/')[2];
     socket.emit('join room', { roomID, playerName });
 });
 
@@ -22,6 +22,7 @@ document.getElementById('change name').addEventListener('click', () => {
         return;
     }
     localStorage.setItem('playerName', playerName);
+    console.log('name changed to ' + playerName);
     socket.emit('join room', { roomID, playerName });
 });
 

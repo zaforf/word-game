@@ -48,7 +48,7 @@ let frequencyCutOff = 0.1;
 
 const votingRound = (roomID) => {
     const votingIndex = rooms[roomID].votingIndex;
-    const submissions = rooms[roomID].players.map(id => [id, players[id].submission[votingIndex]]).filter(([_, submission]) => submission).sort(() => Math.random() - 0.5);
+    const submissions = Object.entries(rooms[roomID].submissions).map(([id, input]) => [id, input[votingIndex]]).filter(([id, input]) => input).sort(() => Math.random() - 0.5);
     const [word, pos, definitions] = rooms[roomID].words[votingIndex];
 
     rooms[roomID].voting = { submissions, definitions, word, pos, results: Array(submissions.length).fill([0, 0]) };
@@ -91,6 +91,7 @@ io.on('connection', (socket) => {
             words: [],
             state: 'lobby',
             lastStart: 0,
+            submissions: {},
             voting: {},
             votingIndex: 0,
             votingMatrix: {}
@@ -105,6 +106,7 @@ io.on('connection', (socket) => {
             rooms[roomID].players.push(userID);
             io.to(roomID).emit('chat message', { name: 'Server', msg: `${playerName} joined the room`, special: true });
         } else if (players[userID].name !== playerName) {
+            console.log('name change from ' + players[userID].name + ' to ' + playerName);
             io.to(roomID).emit('chat message', { name: 'Server', msg: `${players[userID].name} changed their name to ${playerName}`, special: true });
             players[userID].name = playerName;
             io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
@@ -165,7 +167,7 @@ io.on('connection', (socket) => {
 
         socket.on('submit words', ({ input }) => {
             if (rooms[roomID].state !== 'game') return;
-            players[userID].submission = input;
+            rooms[roomID].submissions[userID] = input;
         });
 
         if (rooms[roomID].state === 'voting') {
@@ -211,14 +213,16 @@ io.on('connection', (socket) => {
         const userCount = io.sockets.adapter.rooms.get(userID)?.size || 0;
         if (userCount > 0 || !players[userID]) return;
 
+        const playerName = players[userID].name;
         const roomID = players[userID].room;
         delete players[userID];
         rooms[roomID].players = rooms[roomID].players.filter(id => id !== userID);
         delete rooms[roomID].votingMatrix[userID];
 
-        if (rooms[roomID].players.length > 0)
+        if (rooms[roomID].players.length > 0) {
             io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
-        else delete rooms[roomID];
+            io.to(roomID).emit('chat message', { name: 'Server', msg: `${playerName} left the room`, special: true });
+        } else delete rooms[roomID];
     });
 });
 
