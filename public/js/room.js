@@ -1,14 +1,18 @@
 var socket = io();
 
+let isHost = false;
 let playerName = localStorage.getItem('playerName');
 while (!playerName || !/^[a-zA-Z0-9]+$/.test(playerName)) {
     playerName = prompt('Enter your name:');
     localStorage.setItem('playerName', playerName);
 }
 
-const roomID = window.location.pathname.split('/')[2];
-socket.emit('join room', { roomID, playerName });
-let isHost = false;
+// wait for the server to send the userID before joining the room
+socket.on('session', (userID) => {
+    socket.userID = userID;
+    const roomID = window.location.pathname.split('/')[2];
+    socket.emit('join room', { roomID, playerName });
+});
 
 document.getElementById('change name').addEventListener('click', () => {
     do playerName = prompt('Enter your new name:');
@@ -22,7 +26,7 @@ document.getElementById('change name').addEventListener('click', () => {
 });
 
 socket.on('update lobby', ({ hostID, players }) => {
-    isHost = socket.id === hostID;
+    isHost = socket.userID === hostID;
     if (isHost) {
         document.getElementById('status').innerText = 'You are the host';
         document.getElementById('start').disabled = false;
@@ -153,7 +157,7 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
         // Append elements to list item
         li.appendChild(fractionSpan); // Results on the left
         li.appendChild(submissionText); // Text in the middle
-        if (player === socket.id) {
+        if (player === socket.userID) {
             li.classList.add('highlight-self');
         } else {
             li.appendChild(up); // Upvote button on the right

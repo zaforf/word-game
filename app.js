@@ -1,5 +1,8 @@
 const express = require('express');
 const app = express();
+const session = require("express-session");
+const sharedSession = require("express-socket.io-session");
+const { v4: uuidv4 } = require('uuid');
 
 // socket.io setup
 const http = require('http');
@@ -7,9 +10,20 @@ const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server);
 
+const sessionMiddleware = session({
+    secret: 'secret',
+    resave: false,
+    saveUninitialized: true
+});
+
 const port = 3000;
 
 app.use(express.static('public'));
+app.use(sessionMiddleware);
+app.use((req, res, next) => {
+    if (!req.session.userID) req.session.userID = uuidv4();
+    next();
+});
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + 'public/index.html');
@@ -64,10 +78,14 @@ const calculateVotingResults = (roomID) => {
     rooms[roomID].voting.results = results;
 };
 
+io.use(sharedSession(sessionMiddleware));
+
 io.on('connection', (socket) => {
     console.log('a user connected');
+    socket.emit('session', socket.handshake.session.userID);
 
     socket.on('join room', ({ roomID, playerName }) => {
+        const userID = socket.handshake.session.userID;
         if (!rooms[roomID]) rooms[roomID] = {
             players: [],
             words: [],
@@ -77,28 +95,28 @@ io.on('connection', (socket) => {
             votingIndex: 0,
             votingMatrix: {}
         };
-        if (!players[socket.id]) {
-            players[socket.id] = { 
+        if (!players[userID]) {
+            players[userID] = { 
                 room: roomID,
                 name: playerName,
                 submission: [],
                 score: 0
             };
-        } else { // update player name
-            io.to(roomID).emit('chat message', { name: 'Server', msg: `${players[socket.id].name} changed their name to ${playerName}`, special: true });
-            players[socket.id].name = playerName;
+            rooms[roomID].players.push(userID);
+            io.to(roomID).emit('chat message', { name: 'Server', msg: `${playerName} joined the room`, special: true });
+        } else if (players[userID].name !== playerName) {
+            io.to(roomID).emit('chat message', { name: 'Server', msg: `${players[userID].name} changed their name to ${playerName}`, special: true });
+            players[userID].name = playerName;
             io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
             return;
         }
 
         socket.join(roomID);
-
-        rooms[roomID].players.push(socket.id);
-        
+        socket.join(userID);
         io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
 
         socket.on('start game', () => {
-            const isHost = rooms[roomID].players[0] === socket.id;
+            const isHost = rooms[roomID].players[0] === userID;
             if (!isHost || rooms[roomID].state !== 'lobby') return;
             rooms[roomID].state = 'game';
             rooms[roomID].lastStart = Date.now();
@@ -142,31 +160,31 @@ io.on('connection', (socket) => {
 
         if (rooms[roomID].state === 'game') {
             const timeLeft = gameTime - Math.ceil((Date.now() - rooms[roomID].lastStart) / 1000);
-            io.to(socket.id).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), time: timeLeft });
+            io.to(userID).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), time: timeLeft });
         }
 
         socket.on('submit words', ({ input }) => {
             if (rooms[roomID].state !== 'game') return;
-            players[socket.id].submission = input;
+            players[userID].submission = input;
         });
 
         if (rooms[roomID].state === 'voting') {
-            rooms[roomID].votingMatrix[socket.id] = Array(rooms[roomID].voting.submissions.length).fill(0);
-            io.to(socket.id).emit('voting round', rooms[roomID].voting);
+            rooms[roomID].votingMatrix[userID] = Array(rooms[roomID].voting.submissions.length).fill(0);
+            io.to(userID).emit('voting round', rooms[roomID].voting);
         }
 
         socket.on('vote', ({ index, vote }) => {
             if (rooms[roomID].state !== 'voting') return;
-            if (rooms[roomID].voting.submissions[index][0] === socket.id) return; // cannot vote for yourself
+            if (rooms[roomID].voting.submissions[index][0] === userID) return; // cannot vote for yourself
 
-            rooms[roomID].votingMatrix[socket.id][index] = Math.sign(vote);
+            rooms[roomID].votingMatrix[userID][index] = Math.sign(vote);
             calculateVotingResults(roomID);
 
             io.to(roomID).emit('update votes', rooms[roomID].voting.results);
         });
 
         socket.on('next round', () => {
-            const isHost = rooms[roomID].players[0] === socket.id;
+            const isHost = rooms[roomID].players[0] === userID;
             if (!isHost || rooms[roomID].state !== 'voting') return;
 
             rooms[roomID].voting.results.forEach(([plus, total], i) => {
@@ -183,17 +201,20 @@ io.on('connection', (socket) => {
         });
 
         socket.on('chat message', (msg) => {
-            io.to(roomID).emit('chat message', { name: players[socket.id].name, msg, special: false });
+            io.to(roomID).emit('chat message', { name: players[userID].name, msg, special: false });
         });
     });
 
     socket.on('disconnect', () => {
         console.log('user disconnected');
-        if (!players[socket.id]) return;
-        const roomID = players[socket.id].room;
-        delete players[socket.id];
-        rooms[roomID].players = rooms[roomID].players.filter(id => id !== socket.id);
-        delete rooms[roomID].votingMatrix[socket.id];
+        const userID = socket.handshake.session.userID;
+        const userCount = io.sockets.adapter.rooms.get(userID)?.size || 0;
+        if (userCount > 0 || !players[userID]) return;
+
+        const roomID = players[userID].room;
+        delete players[userID];
+        rooms[roomID].players = rooms[roomID].players.filter(id => id !== userID);
+        delete rooms[roomID].votingMatrix[userID];
 
         if (rooms[roomID].players.length > 0)
             io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
