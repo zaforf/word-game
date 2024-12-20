@@ -228,13 +228,13 @@ ul.definition-list li {
     margin-top: 15px;
 }
 
+.highlight-self {
+    background-color: #F0F0F0;
+}
+
 .highlight-success {
     background-color: lightgreen;
     /* Highlight successful items */
-}
-
-.highlight-self {
-    background-color: #F0F0F0;
 }
 
 .submission-list {

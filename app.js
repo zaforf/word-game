@@ -42,7 +42,7 @@ const posMap = {
     'adv': 'adverb'
 };
 
-let gameTime = 20;
+let gameTime = 80;
 let numWords = 6;
 let frequencyCutOff = 0.1;
 
@@ -140,7 +140,7 @@ io.on('connection', (socket) => {
                         const definitions = data.defs.map(def => def.split('\t')).filter(def => def[0] !== 'u');
                         if (definitions.length === 0) return; // no definitions found
                         const pos = definitions[Math.floor(Math.random() * definitions.length)][0];
-                        rooms[roomID].words.push([word, posMap[pos], definitions.filter(def => def[0] === pos).map(def => def[1])]);
+                        rooms[roomID].words.push([word, posMap[pos.toLowerCase()], definitions.filter(def => def[0] === pos).map(def => def[1])]);
                     });
             };
 

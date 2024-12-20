@@ -165,6 +165,8 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
             li.appendChild(down); // Downvote button on the right
         }
 
+        if (total !== 0 && plus >= total / 2) li.classList.add('highlight-success');
+        else li.classList.remove('highlight-success');
         submissionsList.appendChild(li);
     });
 
