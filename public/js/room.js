@@ -26,6 +26,11 @@ document.getElementById('change name').addEventListener('click', () => {
     socket.emit('join room', { roomID, playerName });
 });
 
+document.getElementById('change room').addEventListener('click', () => {
+    newRoomID = prompt('Enter new room:');
+    window.location.href = `/room/${newRoomID}`;
+});
+
 socket.on('update lobby', ({ hostID, players }) => {
     isHost = socket.userID === hostID;
     if (isHost) {

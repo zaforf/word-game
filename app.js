@@ -222,6 +222,10 @@ io.on('connection', (socket) => {
         if (rooms[roomID].players.length > 0) {
             io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
             io.to(roomID).emit('chat message', { name: 'Server', msg: `${playerName} left the room`, special: true });
+            if (rooms[roomID].state === 'voting') {
+                calculateVotingResults(roomID);
+                io.to(roomID).emit('update votes', rooms[roomID].voting.results);
+            }
         } else delete rooms[roomID];
     });
 });
