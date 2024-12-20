@@ -28,6 +28,7 @@ document.getElementById('change name').addEventListener('click', () => {
 
 document.getElementById('change room').addEventListener('click', () => {
     newRoomID = prompt('Enter new room:');
+    if (!newRoomID) return;
     window.location.href = `/room/${newRoomID}`;
 });
 
