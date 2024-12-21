@@ -1,7 +1,5 @@
-![Banner](https://i.imgur.com/QGs8lBM.png)
-
 # Really Boring Words
-Really Boring Words is a multiplayer word game where players join rooms, write sentences or phrases using given words, and vote on whether they believe other players knew the words based on their submissions.
+A multiplayer word game where players write sentences using given words and vote on whether others knew the words.
 
 ## Built Using
 - Node.js
