@@ -44,10 +44,10 @@ socket.on('update lobby', ({ hostID, players }) => {
 
     const playerList = document.getElementById('players');
     playerList.innerHTML = '';
-    
+
     // Add "(host)" next to the first player's name
     players[0][0] += ' (host)';
-    
+
     // Display sorted list of players by score
     players.sort((a, b) => b[1] - a[1]).forEach(([name, score]) => {
         const li = document.createElement('li');
@@ -74,7 +74,7 @@ socket.on('game started', ({ words, time }) => {
 
     const timer = document.getElementById('timer');
     timer.innerText = format(time);
-    
+
     let interval = setInterval(() => {
         time--;
         timer.innerText = format(time);
@@ -87,7 +87,7 @@ socket.on('game started', ({ words, time }) => {
 
     const inputsContainer = document.getElementById('inputs');
     inputsContainer.innerHTML = '';
-    
+
     words.forEach(([word, pos]) => {
         const div = document.createElement('div');
         div.classList.add('word-input-container'); // Use CSS for consistent styling
@@ -106,9 +106,9 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
     document.getElementById('game').style.display = 'none';
     document.getElementById('lobby').style.display = 'none';
     document.getElementById('voting').style.display = 'block';
-    
+
     document.getElementById('next round').disabled = !isHost;
-    
+
     document.getElementById('word').innerText = `${word} (${pos})`;
 
     const submissionsList = document.getElementById('submissions');
@@ -122,7 +122,7 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
         const fractionSpan = document.createElement('span');
         const [plus, total] = results[index];
         fractionSpan.innerText = `${plus} / ${total}`;
-        
+
         // Create div for submission text
         const submissionText = document.createElement('div');
         submissionText.innerText = submission;
@@ -131,7 +131,7 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
         const up = document.createElement('button');
         up.classList.add('upvote-button');
         up.innerText = '▲';
-        
+
         up.addEventListener('click', () => {
             let vote = 0;
             if (up.classList.contains('active')) {
@@ -148,7 +148,7 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
         const down = document.createElement('button');
         down.classList.add('downvote-button');
         down.innerText = '▼';
-        
+
         down.addEventListener('click', () => {
             let vote = 0;
             if (down.classList.contains('active')) {
@@ -179,24 +179,24 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
 
     const definitionsList = document.getElementById('definitions');
     definitionsList.innerHTML = '';
-    
+
     definitions.forEach(definition => {
         const li = document.createElement('li');
         li.classList.add('definition-item'); // Use CSS for consistent styling
         li.innerText = definition;
-        
+
         definitionsList.appendChild(li);
     });
 });
 
 socket.on('update votes', (results) => {
     const listItems = Array.from(document.getElementById('submissions').children);
-    
+
     listItems.forEach((li, i) => {
         const [plus, total] = results[i];
-        
+
         li.querySelector(':scope > span').innerText = `${plus} / ${total}`;
-        
+
         if (total !== 0 && plus >= total / 2) li.classList.add('highlight-success');
         else li.classList.remove('highlight-success');
     });

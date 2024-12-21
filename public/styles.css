@@ -5,7 +5,7 @@
     --white: #FFFFFF;
     --accent-color: #E0E0E0;
     /* Light gray for borders and highlights */
-    font-family: "Open Sans", serif; 
+    font-family: "Open Sans", serif;
     font-weight: 400;
 }
 
@@ -204,7 +204,8 @@ ul.definition-list li {
     /* Light gray background for contrast */
     border-radius: 8px;
     /* Rounded edges for a modern look */
-    font-family: "Open Sans", serif;    /* Elegant, dictionary-like font */
+    font-family: "Open Sans", serif;
+    /* Elegant, dictionary-like font */
     font-size: 1rem;
     border-left: 4px solid var(--primary-color);
 
@@ -381,4 +382,11 @@ ul.definition-list li {
 .definition-list li:hover {
     background-color: #E8E8E8;
     /* Slightly darker background on hover */
+}
+
+.link {
+    /* Softer gray color for links */
+    color: #D3D3D3;
+    text-decoration: none;
+    /* Remove underline */
 }

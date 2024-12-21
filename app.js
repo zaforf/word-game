@@ -11,7 +11,7 @@ const { Server } = require('socket.io');
 const io = new Server(server);
 
 const sessionMiddleware = session({
-    secret: 'secret',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true
 });
@@ -97,7 +97,7 @@ io.on('connection', (socket) => {
             votingMatrix: {}
         };
         if (!players[userID]) {
-            players[userID] = { 
+            players[userID] = {
                 room: roomID,
                 name: playerName,
                 submission: [],
@@ -153,7 +153,7 @@ io.on('connection', (socket) => {
                     }
                 };
             };
-            
+
             getFilteredWords().then(() => {
                 io.to(roomID).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), time: gameTime });
                 setTimeout(() => votingRound(roomID), gameTime * 1000 + 1000);
