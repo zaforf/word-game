@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const session = require("express-session");
+const session = require("cookie-session");
 const sharedSession = require("express-socket.io-session");
 const { v4: uuidv4 } = require('uuid');
 
