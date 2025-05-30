@@ -67,19 +67,17 @@ const format = (time) => {
     return `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
 };
 
-socket.on('game started', ({ words, time }) => {
+socket.on('game started', ({ words, endTime }) => {
     document.getElementById('game').style.display = 'block';
     document.getElementById('lobby').style.display = 'none';
     document.getElementById('voting').style.display = 'none';
 
     const timer = document.getElementById('timer');
-    timer.innerText = format(time);
+    timer.innerText = format(Math.round((endTime - Date.now()) / 1000));
 
     let interval = setInterval(() => {
-        time--;
-        timer.innerText = format(time);
-        if (time === 0) {
-            timer.innerText = '0:00';
+        timer.innerText = format(Math.round((endTime - Date.now()) / 1000));
+        if (Date.now() >= endTime) {
             clearInterval(interval);
             socket.emit('submit words', { input: Array.from(document.querySelectorAll('.word-input')).map(input => input.value) });
         }
@@ -175,7 +173,6 @@ socket.on('voting round', ({ submissions, definitions, word, pos, results }) => 
         else li.classList.remove('highlight-success');
         submissionsList.appendChild(li);
     });
-
 
     const definitionsList = document.getElementById('definitions');
     definitionsList.innerHTML = '';

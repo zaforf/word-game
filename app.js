@@ -3,6 +3,7 @@ const app = express();
 const session = require("cookie-session");
 const sharedSession = require("express-socket.io-session");
 const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
 
 // socket.io setup
 const http = require('http');
@@ -42,7 +43,7 @@ const posMap = {
     'adv': 'adverb'
 };
 
-let gameTime = 80;
+let gameTime = 5;
 let numWords = 6;
 let frequencyCutOff = 0.1;
 
@@ -121,7 +122,6 @@ io.on('connection', (socket) => {
             const isHost = rooms[roomID].players[0] === userID;
             if (!isHost || rooms[roomID].state !== 'lobby') return;
             rooms[roomID].state = 'game';
-            rooms[roomID].lastStart = Date.now();
 
             // get numWords random words from the API
             const randomWordsAPI = 'https://random-word-api.herokuapp.com/word?number=10';
@@ -141,7 +141,7 @@ io.on('connection', (socket) => {
                         if (definitions.length === 0) return; // no definitions found
                         const pos = definitions[Math.floor(Math.random() * definitions.length)][0];
                         rooms[roomID].words.push([word, posMap[pos.toLowerCase()], definitions.filter(def => def[0] === pos).map(def => def[1])]);
-                    });
+                    })
             };
 
             const getFilteredWords = async () => {
@@ -155,19 +155,26 @@ io.on('connection', (socket) => {
             };
 
             getFilteredWords().then(() => {
-                io.to(roomID).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), time: gameTime });
+                rooms[roomID].endTime = Date.now() + gameTime * 1000;
+                io.to(roomID).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), endTime: rooms[roomID].endTime });
                 setTimeout(() => votingRound(roomID), gameTime * 1000 + 1000);
+            }).catch(err => {
+                console.error('Error fetching words:', err);
+                io.to(roomID).emit('chat message', { name: 'Server', msg: 'API error, please try again later.', special: true });
+                rooms[roomID].state = 'lobby';
             });
         });
 
         if (rooms[roomID].state === 'game') {
-            const timeLeft = gameTime - Math.ceil((Date.now() - rooms[roomID].lastStart) / 1000);
-            io.to(userID).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), time: timeLeft });
+            let endTime = rooms[roomID].endTime;
+            io.to(userID).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), endTime: endTime });
         }
 
         socket.on('submit words', ({ input }) => {
-            if (rooms[roomID].state !== 'game') return;
+            // in case user is behind somehow, commenting this out for now
+            // if (rooms[roomID].state !== 'game') return;
             rooms[roomID].submissions[userID] = input;
+            console.log(`User ${userID} submitted words:`, input);
         });
 
         if (rooms[roomID].state === 'voting') {
