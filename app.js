@@ -43,8 +43,8 @@ const posMap = {
     'adv': 'adverb'
 };
 
-let gameTime = 5;
-let numWords = 6;
+let defaultGameTime = 80;
+let defaultNumWords = 6;
 let frequencyCutOff = 0.1;
 
 const votingRound = (roomID) => {
@@ -95,7 +95,9 @@ io.on('connection', (socket) => {
             submissions: {},
             voting: {},
             votingIndex: 0,
-            votingMatrix: {}
+            votingMatrix: {},
+            gameTime: defaultGameTime,
+            numWords: defaultNumWords,
         };
         if (!players[userID]) {
             players[userID] = {
@@ -107,7 +109,6 @@ io.on('connection', (socket) => {
             rooms[roomID].players.push(userID);
             io.to(roomID).emit('chat message', { name: 'Server', msg: `${playerName} joined the room`, special: true });
         } else if (players[userID].name !== playerName) {
-            console.log('name change from ' + players[userID].name + ' to ' + playerName);
             io.to(roomID).emit('chat message', { name: 'Server', msg: `${players[userID].name} changed their name to ${playerName}`, special: true });
             players[userID].name = playerName;
             io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
@@ -117,6 +118,20 @@ io.on('connection', (socket) => {
         socket.join(roomID);
         socket.join(userID);
         io.to(roomID).emit('update lobby', { hostID: rooms[roomID].players[0], players: rooms[roomID].players.map(id => [players[id].name, players[id].score]) });
+
+        socket.on('update settings', ({numWords, gameTime}) => {
+            const isHost = rooms[roomID].players[0] === userID;
+            if (!isHost || rooms[roomID].state !== 'lobby') return;
+            numWords = parseInt(numWords);
+            gameTime = parseInt(gameTime);
+
+            if (1 <= numWords && numWords <= 30)
+                rooms[roomID].numWords = numWords;
+            if (1 <= gameTime && gameTime <= 300)
+                rooms[roomID].gameTime = gameTime;
+
+            io.to(roomID).emit('settings updated', { numWords: rooms[roomID].numWords, gameTime: rooms[roomID].gameTime });
+        });
 
         socket.on('start game', () => {
             const isHost = rooms[roomID].players[0] === userID;
@@ -145,6 +160,7 @@ io.on('connection', (socket) => {
             };
 
             const getFilteredWords = async () => {
+                const numWords = rooms[roomID].numWords;
                 while (rooms[roomID].words.length < numWords) {
                     const data = await (await fetch(randomWordsAPI)).json();
                     for (const word of data) {
@@ -155,6 +171,7 @@ io.on('connection', (socket) => {
             };
 
             getFilteredWords().then(() => {
+                const gameTime = rooms[roomID].gameTime;
                 rooms[roomID].endTime = Date.now() + gameTime * 1000;
                 io.to(roomID).emit('game started', { words: rooms[roomID].words.map(([word, pos, defs]) => [word, pos]), endTime: rooms[roomID].endTime });
                 setTimeout(() => votingRound(roomID), gameTime * 1000 + 1000);
@@ -174,7 +191,6 @@ io.on('connection', (socket) => {
             // in case user is behind somehow, commenting this out for now
             // if (rooms[roomID].state !== 'game') return;
             rooms[roomID].submissions[userID] = input;
-            console.log(`User ${userID} submitted words:`, input);
         });
 
         if (rooms[roomID].state === 'voting') {

@@ -29,6 +29,16 @@
                     <h2>Lobby</h2>
                     <p id="status" class="status">Connecting...</p>
                     <button id="start" class="btn-primary" disabled>Start Game</button>
+                    <div style="margin-top: 20px; display: flex; gap: 30px; align-items: flex-start;">
+                        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                            <label for="word-count-input" class="status">Word Count</label>
+                            <input id="word-count-input" type="number" value="6" class="field-input" style="width: 80px;" disabled>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                            <label for="time-input" class="status">Time (seconds)</label>
+                            <input id="time-input" type="number" value="80" class="field-input" style="width: 100px;" disabled>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="game" class="game-section" style="display: none;">

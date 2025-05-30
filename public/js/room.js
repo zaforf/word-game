@@ -38,6 +38,8 @@ socket.on('update lobby', ({ hostID, players }) => {
         document.getElementById('status').innerText = 'You are the host';
         document.getElementById('start').disabled = false;
         document.getElementById('next round').disabled = false;
+        document.getElementById('word-count-input').disabled = false;
+        document.getElementById('time-input').disabled = false;
     } else {
         document.getElementById('status').innerText = 'Waiting for host to start the game';
     }
@@ -59,6 +61,22 @@ socket.on('update lobby', ({ hostID, players }) => {
 
 document.getElementById('start').addEventListener('click', () => {
     socket.emit('start game');
+});
+
+const updateSettings = () => {
+    const numWords = parseInt(numWordsInput.value, 10);
+    const gameTime = parseInt(timeInput.value, 10);
+    socket.emit('update settings', { numWords, gameTime });
+}
+
+const numWordsInput = document.getElementById('word-count-input');
+const timeInput = document.getElementById('time-input');
+numWordsInput.addEventListener('change', updateSettings);
+timeInput.addEventListener('change', updateSettings);
+
+socket.on('settings updated', ({ numWords, gameTime }) => {
+    document.getElementById('word-count-input').value = numWords;
+    document.getElementById('time-input').value = gameTime;
 });
 
 const format = (time) => {
